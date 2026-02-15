@@ -5,6 +5,8 @@ import { NoteTools } from './note-tools.js';
 import { SearchTools } from './search-tools.js';
 import { PropertyTools } from './property-tools.js';
 import { TagTools } from './tag-tools.js';
+import { GraphTools } from './graph-tools.js';
+import { ExportTools } from './export-tools.js';
 
 export type ToolHandler = (args: Record<string, unknown>) => Promise<ToolResponse>;
 
@@ -14,6 +16,8 @@ export class ToolRegistry {
   private searchTools: SearchTools;
   private propertyTools: PropertyTools;
   private tagTools: TagTools;
+  private graphTools: GraphTools;
+  private exportTools: ExportTools;
 
   constructor(vault: VaultManager) {
     this.vaultTools = new VaultTools(vault);
@@ -21,6 +25,8 @@ export class ToolRegistry {
     this.searchTools = new SearchTools(vault);
     this.propertyTools = new PropertyTools(vault);
     this.tagTools = new TagTools(vault);
+    this.graphTools = new GraphTools(vault);
+    this.exportTools = new ExportTools(vault);
   }
 
   getHandler(toolName: string): ToolHandler | null {
@@ -140,6 +146,41 @@ export class ToolRegistry {
       },
       tag_list_all: (a) =>
         this.tagTools.listAllTags(a.vault as string),
+
+      // Graph
+      graph_links: (a) =>
+        this.graphTools.links(a.path as string, a.vault as string),
+      graph_backlinks: (a) =>
+        this.graphTools.backlinks(a.path as string, a.vault as string),
+      graph_neighbors: (a) =>
+        this.graphTools.neighbors(
+          a.path as string,
+          a.vault as string,
+          a.options as Record<string, unknown>,
+        ),
+      graph_find_path: (a) => {
+        const opts = a.options as Record<string, unknown> | undefined;
+        return this.graphTools.findPathBetween(
+          a.path as string,
+          (opts?.to || a.query) as string,
+          a.vault as string,
+          opts?.maxDepth as number,
+        );
+      },
+      graph_orphans: (a) =>
+        this.graphTools.orphans(a.vault as string),
+      graph_stats: (a) =>
+        this.graphTools.graphStats(a.vault as string),
+
+      // Export
+      export_note: (a) =>
+        this.exportTools.exportNote(
+          a.path as string,
+          a.vault as string,
+          a.options as Record<string, unknown>,
+        ),
+      export_property_mapping: (a) =>
+        this.exportTools.exportPropertyMapping(a.path as string, a.vault as string),
     };
 
     return handlers[toolName] || null;

@@ -40,6 +40,20 @@ const ACTION_MAP: Record<string, string> = {
   'remove_tags':      'tag_remove',
   'rename_tag':       'tag_rename',
   'list_tags':        'tag_list_all',
+
+  // ===== GRAPH =====
+  'links':            'graph_links',
+  'backlinks':        'graph_backlinks',
+  'neighbors':        'graph_neighbors',
+  'path':             'graph_find_path',
+  'find_path':        'graph_find_path',
+  'orphans':          'graph_orphans',
+  'graph_stats':      'graph_stats',
+
+  // ===== EXPORT =====
+  'export':           'export_note',
+  'export_notion':    'export_note',
+  'property_mapping': 'export_property_mapping',
 };
 
 /**
@@ -82,7 +96,21 @@ TAGS: add_tags, remove_tags, rename_tag, list_tags
   add_tags: Add tags to note. path=note. options: { tags: ["tag1"] }.
   remove_tags: Remove tags. path=note. options: { tags: ["tag1"] }.
   rename_tag: Rename across vault. options: { oldTag: "old", newTag: "new" }.
-  list_tags: List all tags with counts.`,
+  list_tags: List all tags with counts.
+
+GRAPH: links, backlinks, neighbors, path, orphans, graph_stats
+  links: Get outgoing links. path=note.
+  backlinks: Get incoming links. path=note.
+  neighbors: Get N-hop connections. path=note. options: { depth: 2, direction: both|outgoing|incoming, maxNodes: 50 }.
+  path: Find path between notes. path=from note. options: { to: "target.md", maxDepth: 10 }.
+  orphans: Find notes with no links in or out.
+  graph_stats: Vault graph statistics (nodes, edges, most linked, etc).
+
+EXPORT: export, property_mapping
+  export: Export note in Notion-compatible format. path=note. options: { format: notion|obsidian, convertWikilinks, convertCallouts, convertInlineFields, convertEmbeds, convertH4Plus, includePropertyMapping }.
+    Converts: [[wikilinks]]->markdown links, ![[embeds]]->images/links, H4+->bold, key::value->frontmatter, inline #tags->frontmatter.
+    Property mapping: text->rich_text, number->number, checkbox->checkbox, date->date, list/tags->multi_select, [[links]]->relation candidates.
+  property_mapping: Show Obsidian->Notion property type mapping for a note. path=note.`,
 
     inputSchema: {
       type: 'object' as const,
