@@ -27,6 +27,10 @@ export function inferPropertyType(
   if (key === 'tags') return 'tags';
   if (key === 'aliases') return 'aliases';
   if (key === 'cssclasses') return 'cssclasses';
+  // AI conversation fields (fetch-gpt-chat unified format)
+  if (key === 'source') return 'text';
+  if (key === 'created') return 'datetime';
+  if (key === 'updated') return 'datetime';
 
   // Type-based inference
   if (typeof value === 'boolean') return 'checkbox';
@@ -34,7 +38,8 @@ export function inferPropertyType(
   if (Array.isArray(value)) return 'list';
   if (typeof value === 'string') {
     if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(value)) return 'datetime';
-    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return 'date';
+    // Match both "2025-06-15" and "2025-06-15 10:30:00" (fetch-gpt-chat format)
+    if (/^\d{4}-\d{2}-\d{2}( \d{2}:\d{2}(:\d{2})?)?$/.test(value)) return 'date';
     return 'text';
   }
 
@@ -119,8 +124,12 @@ function transformValue(
     case 'date': {
       if (typeof value === 'string') {
         // Obsidian: "2025-06-15" or "2025-06-15T10:30:00"
-        // Notion: { start: "2025-06-15" }
-        return { start: value };
+        // fetch-gpt-chat: "2025-06-15 10:30:00" (no T, no timezone)
+        // Notion: { start: "2025-06-15" } or { start: "2025-06-15T10:30:00" }
+        const normalized = value.includes(' ') && !value.includes('T')
+          ? value.replace(' ', 'T') // "2025-06-15 10:30:00" -> "2025-06-15T10:30:00"
+          : value;
+        return { start: normalized };
       }
       return null;
     }

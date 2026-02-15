@@ -11,6 +11,11 @@ export interface DualFormatOptions {
   convertEmbeds?: boolean;
   convertH4Plus?: boolean;
   includePropertyMapping?: boolean;
+  truncateCallouts?: boolean;
+  maxCalloutChars?: number;
+  maxThinkingChars?: number;
+  convertFootnotes?: boolean;
+  normalizeConversationDates?: boolean;
 }
 
 const DEFAULT_OPTIONS: DualFormatOptions = {
@@ -21,6 +26,11 @@ const DEFAULT_OPTIONS: DualFormatOptions = {
   convertEmbeds: true,
   convertH4Plus: true,
   includePropertyMapping: true,
+  truncateCallouts: true,
+  maxCalloutChars: 500,
+  maxThinkingChars: 2000,
+  convertFootnotes: false, // Keep footnotes as-is (Obsidian renders them, Notion shows plain text)
+  normalizeConversationDates: true,
 };
 
 /**
@@ -87,7 +97,27 @@ export function convertToNotionFormat(
     body = convertH4Plus(body);
   }
 
-  // 6. Remove inline tags from body (already in frontmatter)
+  // 6. Truncate callout content for Notion (API limits)
+  if (opts.truncateCallouts) {
+    body = truncateCallouts(body, opts.maxCalloutChars || 500, opts.maxThinkingChars || 2000);
+  }
+
+  // 7. Normalize conversation dates: <sub>date</sub> -> **date**
+  if (opts.normalizeConversationDates) {
+    body = body.replace(/<sub>(\d{4}-\d{2}-\d{2})<\/sub>/g, '**$1**');
+  }
+
+  // 8. Normalize frontmatter date format for Notion (add T separator)
+  if (opts.normalizeConversationDates) {
+    for (const key of ['created', 'updated']) {
+      const val = frontmatter[key];
+      if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(val)) {
+        frontmatter[key] = val.replace(' ', 'T');
+      }
+    }
+  }
+
+  // 9. Remove inline tags from body (already in frontmatter)
   body = removeInlineTags(body);
 
   return stringifyNote(frontmatter, body);
@@ -214,6 +244,73 @@ function removeInlineFields(body: string): string {
     .split('\n')
     .filter(line => !/^[a-zA-Z_][\w\s]*?::/.test(line))
     .join('\n');
+}
+
+/**
+ * Truncate callout blocks for Notion compatibility.
+ * Thinking/NOTE blocks: max thinkingChars (2000 default, Notion limit).
+ * Tool/other callouts: max calloutChars (500 default).
+ */
+function truncateCallouts(body: string, maxCallout: number, maxThinking: number): string {
+  const lines = body.split('\n');
+  const result: string[] = [];
+  let inCallout = false;
+  let calloutType = '';
+  let calloutContent = '';
+  let calloutContentLineCount = 0;
+
+  const flushCallout = () => {
+    if (!inCallout) return;
+    const limit = calloutType === 'NOTE' ? maxThinking : maxCallout;
+    if (calloutContent.length > limit) {
+      const truncated = calloutContent.substring(0, limit);
+      const truncLines = truncated.split('\n');
+      for (const l of truncLines) {
+        result.push(`> ${l}`);
+      }
+      result.push(`> *[...truncated ${calloutContent.length - limit} chars]*`);
+    } else {
+      const contentLines = calloutContent.split('\n');
+      for (const l of contentLines) {
+        result.push(`> ${l}`);
+      }
+    }
+    inCallout = false;
+    calloutContent = '';
+    calloutContentLineCount = 0;
+  };
+
+  for (const line of lines) {
+    const calloutStart = line.match(/^>\s*\[!([\w]+)\]/);
+    if (calloutStart) {
+      flushCallout();
+      inCallout = true;
+      calloutType = calloutStart[1].toUpperCase();
+      result.push(line); // Push the > [!TYPE] line itself
+      continue;
+    }
+
+    if (inCallout && line.startsWith('>')) {
+      const content = line.replace(/^>\s?/, '');
+      if (calloutContentLineCount === 0 && content.startsWith('**') && content.endsWith('**')) {
+        // This is a title line, pass through
+        result.push(line);
+      } else {
+        calloutContent += (calloutContentLineCount > 0 ? '\n' : '') + content;
+        calloutContentLineCount++;
+      }
+      continue;
+    }
+
+    if (inCallout && !line.startsWith('>')) {
+      flushCallout();
+    }
+
+    result.push(line);
+  }
+
+  flushCallout();
+  return result.join('\n');
 }
 
 /**

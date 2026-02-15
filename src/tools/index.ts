@@ -8,6 +8,7 @@ import { TagTools } from './tag-tools.js';
 import { GraphTools } from './graph-tools.js';
 import { ExportTools } from './export-tools.js';
 import { BasesTools } from './bases-tools.js';
+import { ConversationTools } from './conversation-tools.js';
 
 export type ToolHandler = (args: Record<string, unknown>) => Promise<ToolResponse>;
 
@@ -20,6 +21,7 @@ export class ToolRegistry {
   private graphTools: GraphTools;
   private exportTools: ExportTools;
   private basesTools: BasesTools;
+  private conversationTools: ConversationTools;
 
   constructor(vault: VaultManager) {
     this.vaultTools = new VaultTools(vault);
@@ -30,6 +32,7 @@ export class ToolRegistry {
     this.graphTools = new GraphTools(vault);
     this.exportTools = new ExportTools(vault);
     this.basesTools = new BasesTools(vault);
+    this.conversationTools = new ConversationTools(vault);
   }
 
   getHandler(toolName: string): ToolHandler | null {
@@ -204,6 +207,26 @@ export class ToolRegistry {
         ),
       bases_update: (a) =>
         this.basesTools.updateBase(
+          a.path as string,
+          a.vault as string,
+          a.options as Record<string, unknown>,
+        ),
+
+      // Conversations
+      conversation_search: (a) =>
+        this.conversationTools.searchConversations(
+          a.vault as string,
+          a.options as Record<string, unknown>,
+        ),
+      conversation_analyze: (a) =>
+        this.conversationTools.analyzeConversation(
+          a.path as string,
+          a.vault as string,
+        ),
+      conversation_stats: (a) =>
+        this.conversationTools.conversationStats(a.vault as string),
+      conversation_create_base: (a) =>
+        this.conversationTools.createConversationsBase(
           a.path as string,
           a.vault as string,
           a.options as Record<string, unknown>,

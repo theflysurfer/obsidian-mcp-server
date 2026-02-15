@@ -61,6 +61,12 @@ const ACTION_MAP: Record<string, string> = {
   'create_base':      'bases_create',
   'query_base':       'bases_query',
   'update_base':      'bases_update',
+
+  // ===== CONVERSATIONS =====
+  'search_conversations':     'conversation_search',
+  'analyze_conversation':     'conversation_analyze',
+  'conversation_stats':       'conversation_stats',
+  'create_conversations_base': 'conversation_create_base',
 };
 
 /**
@@ -124,7 +130,15 @@ BASES: list_bases, read_base, create_base, query_base, update_base
   read_base: Read and parse a .base file. path=base file.
   create_base: Create a new .base file. path=name. options: { filters, columns: [...], folder: "..." }.
   query_base: Execute a base query against vault notes. path=base file. options: { viewIndex: 0 }.
-  update_base: Update a .base file config. path=base file. options: { filters, formulas, views, properties }.`,
+  update_base: Update a .base file config. path=base file. options: { filters, formulas, views, properties }.
+
+CONVERSATIONS: search_conversations, analyze_conversation, conversation_stats, create_conversations_base
+  Compatible with fetch-gpt-chat unified format (ChatGPT, Claude, Perplexity, Mistral, DeepSeek, Gemini exports).
+  Detects: frontmatter source field, role markers (**User**:/**Claude**:), tags (conversation/research), callouts.
+  search_conversations: Search AI conversations. options: { source: "Claude"|"ChatGPT"|..., query, dateFrom, dateTo, minMessages, calloutType, folder, maxResults }.
+  analyze_conversation: Analyze a conversation note. path=note. Returns messages, speakers, word count, callout stats.
+  conversation_stats: Vault-wide conversation statistics by source and month.
+  create_conversations_base: Create a .base for indexing conversations. path=base name. options: { source, folder }.`,
 
     inputSchema: {
       type: 'object' as const,
