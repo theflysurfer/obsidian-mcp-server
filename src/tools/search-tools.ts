@@ -56,13 +56,20 @@ export class SearchTools {
   async searchByTags(
     tags: string[],
     vault?: string,
+    options?: {
+      maxResults?: number;
+      directory?: string;
+    },
   ): Promise<ToolResponse> {
+    const maxResults = options?.maxResults ?? 50;
     // Search for notes containing specific tags
-    const allFiles = await this.vault.listFiles(vault);
+    const allFiles = await this.vault.listFiles(vault, options?.directory);
     const mdFiles = allFiles.filter(f => f.extension === '.md');
     const matches: Array<{ path: string; matchedTags: string[] }> = [];
 
     for (const file of mdFiles) {
+      if (matches.length >= maxResults) break;
+
       try {
         const note = await this.vault.readNote(file.path, vault);
         const matchedTags = tags.filter(t =>

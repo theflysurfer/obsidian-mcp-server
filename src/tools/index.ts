@@ -91,7 +91,10 @@ export class ToolRegistry {
       search_by_tags: (a) => {
         const opts = a.options as Record<string, unknown> | undefined;
         const tags = (opts?.tags as string[]) || (a.query as string).split(',').map(t => t.trim());
-        return this.searchTools.searchByTags(tags, a.vault as string);
+        return this.searchTools.searchByTags(tags, a.vault as string, {
+          maxResults: opts?.maxResults as number,
+          directory: (opts?.path || a.path) as string,
+        });
       },
 
       // Properties

@@ -64,7 +64,23 @@ export class FilesystemBackend implements IVaultBackend {
       : this.vaultPath;
 
     assertWithinVault(this.vaultPath, dir);
-    return this.walkDirectory(dir);
+
+    // Use cache for full vault scans (no directory filter)
+    if (!directory && this.fileCache) {
+      const age = Date.now() - this.fileCache.timestamp;
+      if (age < FilesystemBackend.CACHE_TTL_MS) {
+        return this.fileCache.files;
+      }
+    }
+
+    const files = await this.walkDirectory(dir);
+
+    // Cache full vault scans
+    if (!directory) {
+      this.fileCache = { files, timestamp: Date.now() };
+    }
+
+    return files;
   }
 
   async listDirectories(directory?: string): Promise<string[]> {
@@ -145,6 +161,7 @@ export class FilesystemBackend implements IVaultBackend {
       : content;
 
     await fs.writeFile(resolved, fullContent, 'utf-8');
+    this.invalidateCache();
     log.info(`Created note: ${normalized}`);
   }
 
@@ -164,6 +181,7 @@ export class FilesystemBackend implements IVaultBackend {
 
     await fs.access(resolved);
     await fs.unlink(resolved);
+    this.invalidateCache();
     log.info(`Deleted note: ${filePath}`);
   }
 
@@ -177,6 +195,7 @@ export class FilesystemBackend implements IVaultBackend {
     await fs.mkdir(path.dirname(resolvedNew), { recursive: true });
 
     await fs.rename(resolvedOld, resolvedNew);
+    this.invalidateCache();
     log.info(`Moved note: ${oldPath} -> ${newPath}`);
   }
 
@@ -257,11 +276,24 @@ export class FilesystemBackend implements IVaultBackend {
     };
   }
 
+  // --- Cache ---
+
+  private fileCache: { files: VaultFile[]; timestamp: number } | null = null;
+  private static readonly CACHE_TTL_MS = 30_000; // 30 seconds
+
+  invalidateCache(): void {
+    this.fileCache = null;
+  }
+
   // --- Private helpers ---
 
   private async walkDirectory(dir: string): Promise<VaultFile[]> {
     const results: VaultFile[] = [];
+
+    // Use parallel readdir for speed
     const entries = await fs.readdir(dir, { withFileTypes: true });
+    const subDirPromises: Promise<VaultFile[]>[] = [];
+    const statPromises: Promise<VaultFile | null>[] = [];
 
     for (const entry of entries) {
       const fullPath = path.join(dir, entry.name);
@@ -272,21 +304,35 @@ export class FilesystemBackend implements IVaultBackend {
       if (entry.name === 'node_modules') continue;
 
       if (entry.isDirectory()) {
-        const subFiles = await this.walkDirectory(fullPath);
-        results.push(...subFiles);
+        subDirPromises.push(this.walkDirectory(fullPath));
       } else if (entry.isFile()) {
-        const stat = await fs.stat(fullPath);
-        results.push({
-          path: toVaultRelative(this.vaultPath, fullPath),
-          name: path.basename(entry.name, path.extname(entry.name)),
-          extension: path.extname(entry.name),
-          stat: {
-            size: stat.size,
-            ctime: stat.ctimeMs,
-            mtime: stat.mtimeMs,
-          },
-        });
+        // Batch stat calls in parallel instead of sequential await
+        statPromises.push(
+          fs.stat(fullPath).then(stat => ({
+            path: toVaultRelative(this.vaultPath, fullPath),
+            name: path.basename(entry.name, path.extname(entry.name)),
+            extension: path.extname(entry.name),
+            stat: {
+              size: stat.size,
+              ctime: stat.ctimeMs,
+              mtime: stat.mtimeMs,
+            },
+          })).catch(() => null),
+        );
       }
+    }
+
+    // Await all in parallel
+    const [subDirResults, statResults] = await Promise.all([
+      Promise.all(subDirPromises),
+      Promise.all(statPromises),
+    ]);
+
+    for (const subFiles of subDirResults) {
+      results.push(...subFiles);
+    }
+    for (const file of statResults) {
+      if (file) results.push(file);
     }
 
     return results;
