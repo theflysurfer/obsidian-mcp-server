@@ -1,0 +1,40 @@
+{
+  "name": "obsidian-mcp-server",
+  "version": "0.1.0",
+  "description": "MCP server for Obsidian vaults with meta-tool pattern, direct filesystem access, and Notion-compatible export",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "obsidian-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "test": "vitest"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "obsidian",
+    "mcp",
+    "model-context-protocol",
+    "knowledge-management",
+    "notion",
+    "markdown"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.2",
+    "chalk": "^5.3.0",
+    "commander": "^12.0.0",
+    "yaml": "^2.7.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
