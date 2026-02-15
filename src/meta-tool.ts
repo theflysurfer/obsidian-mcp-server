@@ -54,6 +54,13 @@ const ACTION_MAP: Record<string, string> = {
   'export':           'export_note',
   'export_notion':    'export_note',
   'property_mapping': 'export_property_mapping',
+
+  // ===== BASES =====
+  'list_bases':       'bases_list',
+  'read_base':        'bases_read',
+  'create_base':      'bases_create',
+  'query_base':       'bases_query',
+  'update_base':      'bases_update',
 };
 
 /**
@@ -110,7 +117,14 @@ EXPORT: export, property_mapping
   export: Export note in Notion-compatible format. path=note. options: { format: notion|obsidian, convertWikilinks, convertCallouts, convertInlineFields, convertEmbeds, convertH4Plus, includePropertyMapping }.
     Converts: [[wikilinks]]->markdown links, ![[embeds]]->images/links, H4+->bold, key::value->frontmatter, inline #tags->frontmatter.
     Property mapping: text->rich_text, number->number, checkbox->checkbox, date->date, list/tags->multi_select, [[links]]->relation candidates.
-  property_mapping: Show Obsidian->Notion property type mapping for a note. path=note.`,
+  property_mapping: Show Obsidian->Notion property type mapping for a note. path=note.
+
+BASES: list_bases, read_base, create_base, query_base, update_base
+  list_bases: List all .base files in the vault.
+  read_base: Read and parse a .base file. path=base file.
+  create_base: Create a new .base file. path=name. options: { filters, columns: [...], folder: "..." }.
+  query_base: Execute a base query against vault notes. path=base file. options: { viewIndex: 0 }.
+  update_base: Update a .base file config. path=base file. options: { filters, formulas, views, properties }.`,
 
     inputSchema: {
       type: 'object' as const,

@@ -1,10 +1,14 @@
 export type BackendType = 'filesystem' | 'rest-api';
+export type TransportType = 'stdio' | 'http';
 
 export interface ServerConfig {
   vaults: VaultConfig[];
   backend: BackendType;
   metaMode: boolean;
   logLevel: 'debug' | 'info' | 'warn' | 'error';
+  transport: TransportType;
+  httpPort: number;
+  httpHost: string;
 }
 
 export interface VaultConfig {

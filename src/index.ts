@@ -3,7 +3,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { ObsidianMcpServer } from './server.js';
-import type { ServerConfig, BackendType } from './types.js';
+import type { ServerConfig, BackendType, TransportType } from './types.js';
 
 const program = new Command();
 
@@ -20,6 +20,13 @@ program
     'Backend type: filesystem (default) or rest-api',
     'filesystem',
   )
+  .option(
+    '--transport <type>',
+    'Transport: stdio (default) or http',
+    'stdio',
+  )
+  .option('--port <number>', 'HTTP port (default: 8750)', '8750')
+  .option('--host <address>', 'HTTP host (default: 127.0.0.1)', '127.0.0.1')
   .option('--no-meta', 'Disable meta-tool mode (expose individual tools)')
   .option(
     '--log-level <level>',
@@ -29,18 +36,25 @@ program
   .action(async (options) => {
     const vaults = parseVaultArgs(options.vault as string[]);
     const backend = options.backend as BackendType;
+    const transport = options.transport as TransportType;
     const metaMode = options.meta !== false;
     const logLevel = options.logLevel as ServerConfig['logLevel'];
+    const httpPort = parseInt(options.port as string, 10);
+    const httpHost = options.host as string;
 
     // Display startup banner
     console.error(chalk.cyan.bold('\n  Obsidian MCP Server v0.1.0'));
     console.error(chalk.gray('  ─────────────────────────────'));
-    console.error(`  ${chalk.white('Backend:')}    ${chalk.green(backend)}`);
+    console.error(`  ${chalk.white('Transport:')} ${chalk.green(transport)}${transport === 'http' ? chalk.gray(` (${httpHost}:${httpPort})`) : ''}`);
+    console.error(`  ${chalk.white('Backend:')}   ${chalk.green(backend)}`);
     console.error(`  ${chalk.white('Meta-tool:')} ${metaMode ? chalk.green('ON (single "obsidian" tool)') : chalk.yellow('OFF (individual tools)')}`);
     console.error(`  ${chalk.white('Log level:')} ${chalk.gray(logLevel)}`);
     console.error(`  ${chalk.white('Vaults:')}`);
     for (const v of vaults) {
       console.error(`    ${chalk.cyan('•')} ${chalk.white(v.name)} ${chalk.gray('→')} ${chalk.gray(v.path)}`);
+    }
+    if (transport === 'http') {
+      console.error(`  ${chalk.white('MetaMcp:')}   ${chalk.cyan(`http://${httpHost}:${httpPort}/mcp`)}`);
     }
     console.error(chalk.gray('  ─────────────────────────────\n'));
 
@@ -49,6 +63,9 @@ program
       backend,
       metaMode,
       logLevel,
+      transport,
+      httpPort,
+      httpHost,
     };
 
     const server = new ObsidianMcpServer(config);

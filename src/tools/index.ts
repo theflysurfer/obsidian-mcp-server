@@ -7,6 +7,7 @@ import { PropertyTools } from './property-tools.js';
 import { TagTools } from './tag-tools.js';
 import { GraphTools } from './graph-tools.js';
 import { ExportTools } from './export-tools.js';
+import { BasesTools } from './bases-tools.js';
 
 export type ToolHandler = (args: Record<string, unknown>) => Promise<ToolResponse>;
 
@@ -18,6 +19,7 @@ export class ToolRegistry {
   private tagTools: TagTools;
   private graphTools: GraphTools;
   private exportTools: ExportTools;
+  private basesTools: BasesTools;
 
   constructor(vault: VaultManager) {
     this.vaultTools = new VaultTools(vault);
@@ -27,6 +29,7 @@ export class ToolRegistry {
     this.tagTools = new TagTools(vault);
     this.graphTools = new GraphTools(vault);
     this.exportTools = new ExportTools(vault);
+    this.basesTools = new BasesTools(vault);
   }
 
   getHandler(toolName: string): ToolHandler | null {
@@ -181,6 +184,30 @@ export class ToolRegistry {
         ),
       export_property_mapping: (a) =>
         this.exportTools.exportPropertyMapping(a.path as string, a.vault as string),
+
+      // Bases
+      bases_list: (a) =>
+        this.basesTools.listBases(a.vault as string),
+      bases_read: (a) =>
+        this.basesTools.readBase(a.path as string, a.vault as string),
+      bases_create: (a) =>
+        this.basesTools.createBase(
+          a.path as string,
+          a.vault as string,
+          a.options as Record<string, unknown>,
+        ),
+      bases_query: (a) =>
+        this.basesTools.queryBase(
+          a.path as string,
+          a.vault as string,
+          a.options as Record<string, unknown>,
+        ),
+      bases_update: (a) =>
+        this.basesTools.updateBase(
+          a.path as string,
+          a.vault as string,
+          a.options as Record<string, unknown>,
+        ),
     };
 
     return handlers[toolName] || null;

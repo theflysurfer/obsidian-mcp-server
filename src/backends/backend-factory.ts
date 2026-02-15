@@ -22,8 +22,9 @@ export class BackendFactory {
         break;
       }
       case 'rest-api': {
-        // TODO: Phase 6 - REST API backend
-        throw new Error('REST API backend not yet implemented');
+        const { RestApiBackend } = await import('./rest-api-backend.js');
+        backend = new RestApiBackend();
+        break;
       }
       default:
         throw new Error(`Unknown backend type: ${type}`);
