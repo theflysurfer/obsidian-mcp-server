@@ -1,10 +1,10 @@
 # Obsidian MCP Server
 
-A high-performance MCP (Model Context Protocol) server for Obsidian vaults with a single meta-tool pattern, direct filesystem access, graph operations, Notion-compatible export, and AI conversation analysis.
+A high-performance MCP (Model Context Protocol) server for Obsidian vaults with a single meta-tool pattern, direct filesystem access, graph operations, canvas support, task management, Notion sync, and AI conversation analysis.
 
 ## Features
 
-- **Meta-tool pattern** -- Single `obsidian` tool with 40+ actions (~2-3k tokens vs ~15-20k for individual tools)
+- **Meta-tool pattern** -- Single `obsidian` tool with 60+ actions (~2-3k tokens vs ~15-20k for individual tools)
 - **Direct filesystem access** -- No Obsidian app required, reads vault files directly
 - **REST API backend** -- Optional connection via Obsidian Local REST API plugin
 - **Dual transport** -- stdio (MCP standard) or HTTP (MetaMcp compatible)
@@ -13,6 +13,12 @@ A high-performance MCP (Model Context Protocol) server for Obsidian vaults with 
 - **Notion export** -- Convert notes to Notion-compatible markdown with property type mapping
 - **Bases support** -- Read/create/query Obsidian Bases (`.base` YAML files)
 - **Conversation analysis** -- Detect and analyze AI conversation exports (fetch-gpt-chat format)
+- **Content operations** -- Search-replace, insert at line/heading, heading management
+- **Canvas support** -- Read/create/modify `.canvas` JSON files (nodes and edges)
+- **Periodic notes** -- Daily/weekly/monthly note creation and navigation
+- **Task management** -- Extract, filter, update, and track tasks across vault
+- **Advanced search** -- Fuzzy matching, property filters, combined multi-criteria search
+- **Notion sync** -- Sync planning with property type mapping and state tracking
 - **File listing cache** -- 30s TTL cache for vault scans, parallel directory traversal
 
 ## Quick Start
@@ -171,6 +177,60 @@ Compatible with [fetch-gpt-chat](https://github.com/theflysurfer/fetch-gpt-chat)
 | `conversation_stats` | Stats by source and month | |
 | `create_conversations_base` | Create a base for indexing conversations | `path`, `options.source?`, `options.folder?` |
 
+### Content
+
+| Action | Description | Parameters |
+|--------|-------------|------------|
+| `search_replace` | Find and replace text in a note | `path`, `options.search`, `options.replace`, `options.regex?`, `options.caseSensitive?`, `options.maxReplacements?` |
+| `insert_at` | Insert content at line or heading | `path`, `content`, `options.line?`, `options.heading?`, `options.position?` (before/after/end) |
+| `list_headings` | List all headings with levels | `path`, `options.minLevel?`, `options.maxLevel?` |
+| `get_section` | Get content under a heading | `path`, `options.heading`, `options.includeHeading?` |
+| `rename_heading` | Rename a heading | `path`, `options.oldHeading`, `options.newHeading` |
+
+### Canvas
+
+| Action | Description | Parameters |
+|--------|-------------|------------|
+| `list_canvases` | List all `.canvas` files | |
+| `read_canvas` | Read a canvas (nodes + edges) | `path` |
+| `create_canvas` | Create a canvas | `path`, `options.nodes?`, `options.edges?` |
+| `add_canvas_node` | Add a node | `path`, `options.type` (text/file/link/group), `options.text?`, `options.file?`, `options.url?` |
+| `add_canvas_edge` | Add an edge | `path`, `options.fromNode`, `options.toNode`, `options.label?` |
+| `remove_canvas_node` | Remove node + connected edges | `path`, `options.nodeId` |
+| `remove_canvas_edge` | Remove an edge | `path`, `options.edgeId` |
+
+### Periodic Notes
+
+| Action | Description | Parameters |
+|--------|-------------|------------|
+| `daily_note` / `weekly_note` / `monthly_note` | Get or create periodic note | `options.period`, `options.date?`, `options.folder?`, `options.template?`, `options.createIfMissing?` |
+| `navigate_periodic` | Go to previous/next note | `options.period`, `options.date?`, `options.direction` (previous/next) |
+| `list_periodic` | List periodic notes | `options.period`, `options.folder?`, `options.limit?`, `options.from?`, `options.to?` |
+
+### Tasks
+
+| Action | Description | Parameters |
+|--------|-------------|------------|
+| `list_tasks` | List tasks across vault | `options.path?`, `options.status?` (todo/done/cancelled/in-progress/all), `options.tag?`, `options.maxResults?` |
+| `update_task` | Toggle/update task status | `path`, `options.line`, `options.status` |
+| `task_stats` | Task statistics | `options.path?` |
+
+### Advanced Search
+
+| Action | Description | Parameters |
+|--------|-------------|------------|
+| `search_fuzzy` | Fuzzy filename matching | `query`, `options.maxResults?`, `options.threshold?` |
+| `search_advanced` | Combined multi-criteria search | `options.query?`, `options.tags?`, `options.properties?`, `options.dateFrom?`, `options.dateTo?`, `options.sortBy?`, `options.sortOrder?` |
+| `search_property` | Search by frontmatter property | `options.key`, `options.value?`, `options.operator?` (eq/ne/gt/lt/contains/exists) |
+
+### Notion Sync
+
+| Action | Description | Parameters |
+|--------|-------------|------------|
+| `sync_plan` | Generate sync plan (JSON operations) | `options.path?`, `options.databaseId?`, `options.filter?` |
+| `sync_update_state` | Update sync state after sync | `options.entries` |
+| `sync_status` | Get sync status overview | `options.syncStatePath?` |
+
 ## Architecture
 
 ```
@@ -202,13 +262,18 @@ src/
     index.ts            ToolRegistry (all handlers)
     vault-tools.ts      Vault operations
     note-tools.ts       Note CRUD
-    search-tools.ts     Content/filename/tag search
+    search-tools.ts     Content/filename/tag/fuzzy/advanced search
     property-tools.ts   Frontmatter operations
     tag-tools.ts        Tag management
     graph-tools.ts      Graph operations
     export-tools.ts     Notion export
     bases-tools.ts      Bases operations
     conversation-tools.ts  Conversation analysis
+    content-tools.ts    Search-replace, headings, sections
+    canvas-tools.ts     .canvas file operations
+    periodic-tools.ts   Daily/weekly/monthly notes
+    task-tools.ts       Task extraction and management
+    sync-tools.ts       Notion sync planning
   utils/
     path.ts             Path normalization
     security.ts         Vault path traversal protection
@@ -230,12 +295,16 @@ npx vitest
 npx vitest run tests/frontmatter.test.ts
 ```
 
-88 tests across 5 test suites:
+138 tests across 9 test suites:
 - `frontmatter.test.ts` -- YAML parsing, stringify, property operations
 - `link-resolver.test.ts` -- Wikilinks, embeds, tags, inline fields, conversations
 - `path-utils.test.ts` -- Path normalization, extension handling
-- `meta-tool.test.ts` -- Tool definition, action routing, completeness
+- `meta-tool.test.ts` -- Tool definition, action routing, completeness (all 60+ actions)
 - `filesystem-backend.test.ts` -- Integration tests with temp vault (CRUD, search, cache)
+- `content-tools.test.ts` -- Search-replace, headings, sections, insert
+- `canvas-tools.test.ts` -- Canvas CRUD, nodes, edges
+- `task-tools.test.ts` -- Task extraction, status toggle, statistics
+- `search-advanced.test.ts` -- Fuzzy search, property search, combined filters
 
 ## Manual Testing
 

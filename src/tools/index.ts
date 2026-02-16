@@ -9,6 +9,11 @@ import { GraphTools } from './graph-tools.js';
 import { ExportTools } from './export-tools.js';
 import { BasesTools } from './bases-tools.js';
 import { ConversationTools } from './conversation-tools.js';
+import { ContentTools } from './content-tools.js';
+import { CanvasTools } from './canvas-tools.js';
+import { PeriodicTools } from './periodic-tools.js';
+import { TaskTools } from './task-tools.js';
+import { SyncTools } from './sync-tools.js';
 
 export type ToolHandler = (args: Record<string, unknown>) => Promise<ToolResponse>;
 
@@ -22,6 +27,11 @@ export class ToolRegistry {
   private exportTools: ExportTools;
   private basesTools: BasesTools;
   private conversationTools: ConversationTools;
+  private contentTools: ContentTools;
+  private canvasTools: CanvasTools;
+  private periodicTools: PeriodicTools;
+  private taskTools: TaskTools;
+  private syncTools: SyncTools;
 
   constructor(vault: VaultManager) {
     this.vaultTools = new VaultTools(vault);
@@ -33,6 +43,11 @@ export class ToolRegistry {
     this.exportTools = new ExportTools(vault);
     this.basesTools = new BasesTools(vault);
     this.conversationTools = new ConversationTools(vault);
+    this.contentTools = new ContentTools(vault);
+    this.canvasTools = new CanvasTools(vault);
+    this.periodicTools = new PeriodicTools(vault);
+    this.taskTools = new TaskTools(vault);
+    this.syncTools = new SyncTools(vault);
   }
 
   getHandler(toolName: string): ToolHandler | null {
@@ -233,6 +248,145 @@ export class ToolRegistry {
           a.path as string,
           a.vault as string,
           a.options as Record<string, unknown>,
+        ),
+
+      // Content operations
+      content_search_replace: (a) =>
+        this.contentTools.searchReplace(
+          a.path as string,
+          a.vault as string,
+          a.options as Record<string, unknown> as any,
+        ),
+      content_insert_at: (a) =>
+        this.contentTools.insertAt(
+          a.path as string,
+          a.content as string,
+          a.vault as string,
+          a.options as Record<string, unknown> as any,
+        ),
+      content_list_headings: (a) =>
+        this.contentTools.listHeadings(
+          a.path as string,
+          a.vault as string,
+          a.options as Record<string, unknown> as any,
+        ),
+      content_get_section: (a) =>
+        this.contentTools.getSection(
+          a.path as string,
+          a.vault as string,
+          a.options as Record<string, unknown> as any,
+        ),
+      content_rename_heading: (a) =>
+        this.contentTools.renameHeading(
+          a.path as string,
+          a.vault as string,
+          a.options as Record<string, unknown> as any,
+        ),
+
+      // Canvas
+      canvas_list: (a) =>
+        this.canvasTools.listCanvases(a.vault as string),
+      canvas_read: (a) =>
+        this.canvasTools.readCanvas(a.path as string, a.vault as string),
+      canvas_create: (a) =>
+        this.canvasTools.createCanvas(
+          a.path as string,
+          a.vault as string,
+          a.options as Record<string, unknown> as any,
+        ),
+      canvas_add_node: (a) =>
+        this.canvasTools.addNode(
+          a.path as string,
+          a.vault as string,
+          a.options as Record<string, unknown> as any,
+        ),
+      canvas_add_edge: (a) =>
+        this.canvasTools.addEdge(
+          a.path as string,
+          a.vault as string,
+          a.options as Record<string, unknown> as any,
+        ),
+      canvas_remove_node: (a) =>
+        this.canvasTools.removeNode(
+          a.path as string,
+          a.vault as string,
+          a.options as Record<string, unknown> as any,
+        ),
+      canvas_remove_edge: (a) =>
+        this.canvasTools.removeEdge(
+          a.path as string,
+          a.vault as string,
+          a.options as Record<string, unknown> as any,
+        ),
+
+      // Periodic notes
+      periodic_get: (a) =>
+        this.periodicTools.getOrCreatePeriodic(
+          a.vault as string,
+          a.options as Record<string, unknown> as any,
+        ),
+      periodic_navigate: (a) =>
+        this.periodicTools.navigatePeriodic(
+          a.vault as string,
+          a.options as Record<string, unknown> as any,
+        ),
+      periodic_list: (a) =>
+        this.periodicTools.listPeriodic(
+          a.vault as string,
+          a.options as Record<string, unknown> as any,
+        ),
+
+      // Tasks
+      task_list: (a) =>
+        this.taskTools.listTasks(
+          a.vault as string,
+          a.options as Record<string, unknown> as any,
+        ),
+      task_update: (a) =>
+        this.taskTools.updateTask(
+          a.path as string,
+          a.vault as string,
+          a.options as Record<string, unknown> as any,
+        ),
+      task_stats: (a) =>
+        this.taskTools.taskStats(
+          a.vault as string,
+          a.options as Record<string, unknown> as any,
+        ),
+
+      // Advanced search
+      search_fuzzy: (a) =>
+        this.searchTools.searchFuzzy(
+          a.query as string,
+          a.vault as string,
+          a.options as Record<string, unknown> as any,
+        ),
+      search_advanced: (a) =>
+        this.searchTools.searchAdvanced(
+          a.vault as string,
+          a.options as Record<string, unknown> as any,
+        ),
+      search_by_property: (a) =>
+        this.searchTools.searchByProperty(
+          a.vault as string,
+          a.options as Record<string, unknown> as any,
+        ),
+
+      // Notion sync
+      sync_plan: (a) =>
+        this.syncTools.syncPlan(
+          a.vault as string,
+          a.options as Record<string, unknown> as any,
+        ),
+      sync_update_state: (a) =>
+        this.syncTools.updateSyncState(
+          a.vault as string,
+          a.options as Record<string, unknown> as any,
+        ),
+      sync_status: (a) =>
+        this.syncTools.syncStatus(
+          a.vault as string,
+          a.options as Record<string, unknown> as any,
         ),
     };
 

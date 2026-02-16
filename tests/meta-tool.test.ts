@@ -37,13 +37,19 @@ describe('getMetaToolDefinition', () => {
     expect(desc).toContain('EXPORT:');
     expect(desc).toContain('BASES:');
     expect(desc).toContain('CONVERSATIONS:');
+    expect(desc).toContain('CONTENT:');
+    expect(desc).toContain('CANVAS:');
+    expect(desc).toContain('PERIODIC:');
+    expect(desc).toContain('TASKS:');
+    expect(desc).toContain('ADVANCED SEARCH:');
+    expect(desc).toContain('SYNC:');
   });
 });
 
 describe('getAvailableActions', () => {
   it('should return all mapped action names', () => {
     const actions = getAvailableActions();
-    expect(actions.length).toBeGreaterThan(20);
+    expect(actions.length).toBeGreaterThan(40);
 
     // Verify core actions exist
     expect(actions).toContain('read');
@@ -84,11 +90,62 @@ describe('getAvailableActions', () => {
     expect(actions).toContain('create_conversations_base');
   });
 
+  it('should include content actions', () => {
+    const actions = getAvailableActions();
+    expect(actions).toContain('search_replace');
+    expect(actions).toContain('insert_at');
+    expect(actions).toContain('list_headings');
+    expect(actions).toContain('get_section');
+    expect(actions).toContain('rename_heading');
+  });
+
+  it('should include canvas actions', () => {
+    const actions = getAvailableActions();
+    expect(actions).toContain('list_canvases');
+    expect(actions).toContain('read_canvas');
+    expect(actions).toContain('create_canvas');
+    expect(actions).toContain('add_canvas_node');
+    expect(actions).toContain('add_canvas_edge');
+    expect(actions).toContain('remove_canvas_node');
+    expect(actions).toContain('remove_canvas_edge');
+  });
+
+  it('should include periodic actions', () => {
+    const actions = getAvailableActions();
+    expect(actions).toContain('daily_note');
+    expect(actions).toContain('weekly_note');
+    expect(actions).toContain('monthly_note');
+    expect(actions).toContain('navigate_periodic');
+    expect(actions).toContain('list_periodic');
+  });
+
+  it('should include task actions', () => {
+    const actions = getAvailableActions();
+    expect(actions).toContain('list_tasks');
+    expect(actions).toContain('update_task');
+    expect(actions).toContain('task_stats');
+  });
+
+  it('should include advanced search actions', () => {
+    const actions = getAvailableActions();
+    expect(actions).toContain('search_fuzzy');
+    expect(actions).toContain('search_advanced');
+    expect(actions).toContain('search_property');
+  });
+
+  it('should include sync actions', () => {
+    const actions = getAvailableActions();
+    expect(actions).toContain('sync_plan');
+    expect(actions).toContain('sync_update_state');
+    expect(actions).toContain('sync_status');
+  });
+
   it('should include aliases', () => {
     const actions = getAvailableActions();
     expect(actions).toContain('find');       // alias for search
     expect(actions).toContain('rename');     // alias for move
     expect(actions).toContain('find_path');  // alias for path
     expect(actions).toContain('export_notion'); // alias for export
+    expect(actions).toContain('periodic_note'); // alias for daily_note
   });
 });

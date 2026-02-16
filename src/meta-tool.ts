@@ -67,6 +67,45 @@ const ACTION_MAP: Record<string, string> = {
   'analyze_conversation':     'conversation_analyze',
   'conversation_stats':       'conversation_stats',
   'create_conversations_base': 'conversation_create_base',
+
+  // ===== CONTENT =====
+  'search_replace':           'content_search_replace',
+  'insert_at':                'content_insert_at',
+  'list_headings':            'content_list_headings',
+  'get_section':              'content_get_section',
+  'rename_heading':           'content_rename_heading',
+
+  // ===== CANVAS =====
+  'list_canvases':            'canvas_list',
+  'read_canvas':              'canvas_read',
+  'create_canvas':            'canvas_create',
+  'add_canvas_node':          'canvas_add_node',
+  'add_canvas_edge':          'canvas_add_edge',
+  'remove_canvas_node':       'canvas_remove_node',
+  'remove_canvas_edge':       'canvas_remove_edge',
+
+  // ===== PERIODIC =====
+  'daily_note':               'periodic_get',
+  'weekly_note':              'periodic_get',
+  'monthly_note':             'periodic_get',
+  'periodic_note':            'periodic_get',
+  'navigate_periodic':        'periodic_navigate',
+  'list_periodic':            'periodic_list',
+
+  // ===== TASKS =====
+  'list_tasks':               'task_list',
+  'update_task':              'task_update',
+  'task_stats':               'task_stats',
+
+  // ===== ADVANCED SEARCH =====
+  'search_fuzzy':             'search_fuzzy',
+  'search_advanced':          'search_advanced',
+  'search_property':          'search_by_property',
+
+  // ===== SYNC =====
+  'sync_plan':                'sync_plan',
+  'sync_update_state':        'sync_update_state',
+  'sync_status':              'sync_status',
 };
 
 /**
@@ -138,7 +177,43 @@ CONVERSATIONS: search_conversations, analyze_conversation, conversation_stats, c
   search_conversations: Search AI conversations. options: { source: "Claude"|"ChatGPT"|..., query, dateFrom, dateTo, minMessages, calloutType, folder, maxResults }.
   analyze_conversation: Analyze a conversation note. path=note. Returns messages, speakers, word count, callout stats.
   conversation_stats: Vault-wide conversation statistics by source and month.
-  create_conversations_base: Create a .base for indexing conversations. path=base name. options: { source, folder }.`,
+  create_conversations_base: Create a .base for indexing conversations. path=base name. options: { source, folder }.
+
+CONTENT: search_replace, insert_at, list_headings, get_section, rename_heading
+  search_replace: Find and replace text in a note. path=note. options: { search, replace, regex?, caseSensitive?, maxReplacements? }.
+  insert_at: Insert content at line or heading. path=note, content=text. options: { line?, heading?, position: before|after|end }.
+  list_headings: List all headings. path=note. options: { minLevel?, maxLevel? }.
+  get_section: Get content under a heading. path=note. options: { heading, includeHeading?, includeChildren? }.
+  rename_heading: Rename a heading. path=note. options: { oldHeading, newHeading }.
+
+CANVAS: list_canvases, read_canvas, create_canvas, add_canvas_node, add_canvas_edge, remove_canvas_node, remove_canvas_edge
+  list_canvases: List all .canvas files.
+  read_canvas: Read a .canvas file. path=canvas. Returns nodes and edges.
+  create_canvas: Create a .canvas file. path=name. options: { nodes?, edges? }.
+  add_canvas_node: Add a node. path=canvas. options: { type: text|file|link|group, text?, file?, url?, x?, y?, width?, height?, color? }.
+  add_canvas_edge: Add an edge. path=canvas. options: { fromNode, toNode, fromSide?, toSide?, label?, color? }.
+  remove_canvas_node: Remove a node and its edges. path=canvas. options: { nodeId }.
+  remove_canvas_edge: Remove an edge. path=canvas. options: { edgeId }.
+
+PERIODIC: daily_note, weekly_note, monthly_note, navigate_periodic, list_periodic
+  daily_note/weekly_note/monthly_note: Get or create periodic note. options: { period: daily|weekly|monthly, date?, folder?, template?, createIfMissing? }.
+  navigate_periodic: Go to previous/next periodic note. options: { period, date?, direction: previous|next, folder? }.
+  list_periodic: List periodic notes. options: { period, folder?, limit?, from?, to? }.
+
+TASKS: list_tasks, update_task, task_stats
+  list_tasks: List tasks across vault. options: { path?, status: todo|done|cancelled|in-progress|all, tag?, maxResults?, includeCompleted? }.
+  update_task: Toggle task status. path=note. options: { line, status: todo|done|cancelled|in-progress }.
+  task_stats: Task statistics. options: { path? }. Returns counts, completion rate, top files, by-tag breakdown.
+
+ADVANCED SEARCH: search_fuzzy, search_advanced, search_property
+  search_fuzzy: Fuzzy filename search. query=search term. options: { maxResults?, threshold? }.
+  search_advanced: Combined search with multiple filters. options: { query?, tags?, properties?: { key: value|"*"|[values] }, dateFrom?, dateTo?, path?, maxResults?, sortBy?: name|modified|created, sortOrder?: asc|desc }.
+  search_property: Search by frontmatter property. options: { key, value?, operator: eq|ne|gt|lt|contains|exists, path?, maxResults? }.
+
+SYNC: sync_plan, sync_update_state, sync_status
+  sync_plan: Generate Notion sync plan (JSON operations). options: { path?, syncStatePath?, databaseId?, filter?: { tags?, properties?, modifiedSince? }, dryRun? }.
+  sync_update_state: Update sync state after sync. options: { syncStatePath?, entries: [{ path, notionPageId?, status }] }.
+  sync_status: Get sync status overview. options: { syncStatePath?, path? }.`,
 
     inputSchema: {
       type: 'object' as const,
